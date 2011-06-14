@@ -40,7 +40,7 @@ class SpoonEmail
 	 *
 	 * @var	array
 	 */
-	private $attachments = array();
+	protected $attachments = array();
 
 
 	/**
@@ -48,7 +48,7 @@ class SpoonEmail
 	 *
 	 * @var	array
 	 */
-	private $BCC = array();
+	protected $BCC = array();
 
 
 	/**
@@ -56,7 +56,7 @@ class SpoonEmail
 	 *
 	 * @var	array
 	 */
-	private $CC = array();
+	protected $CC = array();
 
 
 	/**
@@ -64,7 +64,7 @@ class SpoonEmail
 	 *
 	 * @var string
 	 */
-	private $charset = 'utf-8';
+	protected $charset = 'utf-8';
 
 
 	/**
@@ -72,7 +72,7 @@ class SpoonEmail
 	 *
 	 * @var string
 	 */
-	private $compileDirectory;
+	protected $compileDirectory;
 
 
 	/**
@@ -80,7 +80,7 @@ class SpoonEmail
 	 *
 	 * @var array
 	 */
-	private $content = array('html' => '', 'plain' => '');
+	protected $content = array('html' => '', 'plain' => '');
 
 
 	/**
@@ -88,7 +88,7 @@ class SpoonEmail
 	 *
 	 * @var	string
 	 */
-	private $contentType = 'multipart/alternative';
+	protected $contentType = 'multipart/alternative';
 
 
 	/**
@@ -96,7 +96,7 @@ class SpoonEmail
 	 *
 	 * @var	bool
 	 */
-	private $debug = false;
+	protected $debug = false;
 
 
 	/**
@@ -104,7 +104,7 @@ class SpoonEmail
 	 *
 	 * @var	array
 	 */
-	private $from = array('name' => '', 'email' => '');
+	protected $from = array('name' => '', 'email' => '');
 
 
 	/**
@@ -112,7 +112,7 @@ class SpoonEmail
 	 *
 	 * @var string
 	 */
-	private $headers = '';
+	protected $headers = '';
 
 
 	/**
@@ -120,7 +120,7 @@ class SpoonEmail
 	 *
 	 * @var	string
 	 */
-	private $method = 'mail';
+	protected $method = 'mail';
 
 
 	/**
@@ -128,7 +128,7 @@ class SpoonEmail
 	 *
 	 * @var	int
 	 */
-	private $priority = 3;
+	protected $priority = 3;
 
 
 	/**
@@ -136,7 +136,7 @@ class SpoonEmail
 	 *
 	 * @var	array
 	 */
-	private $recipients = array();
+	protected $recipients = array();
 
 
 	/**
@@ -144,7 +144,7 @@ class SpoonEmail
 	 *
 	 * @var array
 	 */
-	private $replyTo;
+	protected $replyTo;
 
 
 	/**
@@ -152,7 +152,7 @@ class SpoonEmail
 	 *
 	 * @var string
 	 */
-	private $security;
+	protected $security;
 
 
 	/**
@@ -160,7 +160,7 @@ class SpoonEmail
 	 *
 	 * @var	SpoonEmailSMTP
 	 */
-	private $SMTP;
+	protected $SMTP;
 
 
 	/**
@@ -168,7 +168,7 @@ class SpoonEmail
 	 *
 	 * @var	string
 	 */
-	private $subject;
+	protected $subject;
 
 
 	/**
@@ -176,7 +176,7 @@ class SpoonEmail
 	 *
 	 * @var	array
 	 */
-	private $to = array('name' => '', 'email' => '');
+	protected $to = array('name' => '', 'email' => '');
 
 
 	/**
@@ -329,7 +329,7 @@ class SpoonEmail
 	 * @return	string
 	 * @param	string $extension	The extension to look up.
 	 */
-	private function getAttachmentContentType($extension)
+	protected function getAttachmentContentType($extension)
 	{
 		// content types listed by extension
 		$types = array(	'default' => 'application/octet-stream',
@@ -433,7 +433,7 @@ class SpoonEmail
 	 *
 	 * @return	void
 	 */
-	private function getHeaders()
+	protected function getHeaders()
 	{
 		// create boundaries
 		$uniqueId = md5(uniqid(time()));
@@ -561,7 +561,7 @@ class SpoonEmail
 	 * @param	string $template			The path to (including the filename for) the template.
 	 * @param	array[optional] $variables	The variables to parse into $template.
 	 */
-	private function getTemplateContent($template, array $variables = null)
+	protected function getTemplateContent($template, array $variables = null)
 	{
 		// check if compile directory is set
 		if(empty($this->compileDirectory)) throw new SpoonEmailException('Compile directory is not set. Use setTemplateCompileDirectory.');
@@ -587,7 +587,7 @@ class SpoonEmail
 	 * @param	array $variables		The variables to parse into the content.
 	 * @param	string[optional] $type	The e-mail type. Either 'html' or 'plain'.
 	 */
-	private function processContent($content, $variables, $type = 'html')
+	protected function processContent($content, $variables, $type = 'html')
 	{
 		// check for type
 		$type = SpoonFilter::getValue($type, array('html', 'plain'), 'html');
@@ -630,7 +630,7 @@ class SpoonEmail
 	 * @return	string
 	 * @param	array $recipients	The array with recipients to reformat into the correct string.
 	 */
-	private function reformatRecipientString(array $recipients)
+	protected function reformatRecipientString(array $recipients)
 	{
 		// recipients found
 		if(!empty($recipients))
