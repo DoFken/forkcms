@@ -418,6 +418,17 @@ class SpoonEmail
 
 
 	/**
+	 * Fetch the list of attachments.
+	 *
+	 * @return	array
+	 */
+	public function getAttachments()
+	{
+		return $this->attachments;
+	}
+
+
+	/**
 	 * Returns the SpoonEmail debugging status.
 	 *
 	 * @return	bool
@@ -425,6 +436,28 @@ class SpoonEmail
 	public function getDebug()
 	{
 		return $this->debug;
+	}
+
+
+	/**
+	 * Fetch the from e-mail address.
+	 *
+	 * @return	string
+	 */
+	public function getFromEmail()
+	{
+		return $this->from['email'];
+	}
+
+
+	/**
+	 * Fetch the from name.
+	 *
+	 * @return	string
+	 */
+	public function getFromName()
+	{
+		return $this->from['name'];
 	}
 
 
@@ -551,6 +584,17 @@ class SpoonEmail
 			// SMTP enabled
 			if($this->SMTP !== null) return $this->SMTP->getOutput();
 		}
+	}
+
+
+	/**
+	 * Fetch the list of recipients.
+	 *
+	 * @return	array
+	 */
+	public function getRecipients()
+	{
+		return $this->recipients;
 	}
 
 
