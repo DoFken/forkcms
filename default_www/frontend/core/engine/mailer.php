@@ -32,10 +32,6 @@ class FrontendMailer
 			'utm_campaign' => SpoonFilter::urlise($email->getSubject())
 		);
 
-		// to
-		$item['to_email'] = (!$email->getToEmail()) ? $to['email'] : $email->getToEmail();
-		$item['to_name'] = (!$email->getToName()) ? $to['name'] : $email->getToName();
-
 		// from
 		$item['from_email'] = (!$email->getFromEmail()) ? $from['email'] : $email->getFromEmail();
 		$item['from_name'] = (!$email->getFromName()) ? $from['name'] : $email->getFromName();
@@ -51,8 +47,8 @@ class FrontendMailer
 
 		// subject, plaintext, html & created on
 		$item['subject'] = SpoonFilter::htmlentitiesDecode($email->getSubject());
-		$item['html'] = ($email->getTemplate() === null) ? $email->getBody() : self::getTemplateContent($email->getTemplate(), $email->getVariables());
-		if($email->getPlainText() !== null) $item['plain_text'] = $email->getPlainText();
+		$item['html'] =  $email->getHtmlContent();
+		if($email->getPlainContent() !== null) $item['plain_text'] = $email->getPlainContent();
 		$item['created_on'] = FrontendModel::getUTCDate();
 
 		// prepend site url
@@ -76,11 +72,43 @@ class FrontendMailer
 			$item['send_on'] = FrontendModel::getUTCDate('Y-m-d H:i:s', (int) $sendOn);
 		}
 
-		// insert the email into the database
-		$id = FrontendModel::getDB(true)->insert('emails', $item);
+		/*
+		 * If no recipients were added to the mail object, we're going to send this
+		 * email just to the default receiver.
+		 */
+		if(empty($email->getRecipients()))
+		{
+			// to
+			$item['to_email'] = $to['email'];
+			$item['to_name'] = $to['name'];
 
-		// send e-mail right now
-		if(!$sendOn) self::send($id);
+			// insert the email into the database
+			$id = FrontendModel::getDB(true)->insert('emails', $item);
+
+			// send e-mail right now
+			if(!$sendOn) self::send($id);
+		}
+
+		/*
+		 * One or more recipients were added, so we're going to send this email to all
+		 * of them.
+		 */
+		else
+		{
+			// loop recipients
+			foreach($email->getRecipients() as $recipient)
+			{
+				// to
+				$item['to_email'] = $recipient['email'];
+				$item['to_name'] = $recipient['name'];
+
+				// insert the email into the database
+				$id = FrontendModel::getDB(true)->insert('emails', $item);
+
+				// send e-mail right now
+				if(!$sendOn) self::send($id);
+			}
+		}
 	}
 
 
