@@ -80,7 +80,7 @@ class SpoonEmail
 	 *
 	 * @var array
 	 */
-	protected $content = array('html' => '', 'plain' => '');
+	protected $content = array('html' => null, 'plain' => null);
 
 
 	/**
@@ -863,7 +863,7 @@ class SpoonEmail
 		// set mailing method to smtp
 		$this->method = 'smtp';
 
-		// port was null
+		// no port was defined
 		if($port === null)
 		{
 			// check security level to change port
