@@ -555,6 +555,17 @@ class SpoonEmail
 
 
 	/**
+	 * Fetch the e-mail subject.
+	 *
+	 * @return	string
+	 */
+	public function getSubject()
+	{
+		return $this->subject;
+	}
+
+
+	/**
 	 * Returns the parsed content of a given template with optional variables.
 	 *
 	 * @return	string
