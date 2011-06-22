@@ -14,7 +14,7 @@ class FrontendTemplateCustom
 	/**
 	 * Template instance
 	 *
-	 * @var	ForkTemplate
+	 * @var	FrontendTemplate
 	 */
 	private $tpl;
 
@@ -25,7 +25,7 @@ class FrontendTemplateCustom
 	 * @return	void
 	 * @param	FrontendTemplate $tpl	The template instance.
 	 */
-	public function __construct($tpl)
+	public function __construct(FrontendTemplate $tpl)
 	{
 		// set property
 		$this->tpl = $tpl;
