@@ -23,6 +23,7 @@
  *
  *
  * @author		Dave Lens <dave@spoon-library.com>
+ * @author		Davy Hellemans <davy@spoon-library.com>
  * @since		1.0.0
  */
 class SpoonEmail
