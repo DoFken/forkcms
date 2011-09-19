@@ -288,7 +288,7 @@ class BackendBlogEdit extends BackendBaseActionEdit
 				// build item
 				$item['id'] = $this->id;
 				$item['revision_id'] = $this->record['revision_id']; // this is used to let our model know the status (active, archive, draft) of the edited item
-				$item['meta_id'] = $this->meta->save();
+				$item['meta_id'] = $this->meta->save(BackendMeta::INSERT);
 				$item['category_id'] = (int) $this->frm->getField('category_id')->getValue();
 				$item['user_id'] = $this->frm->getField('user_id')->getValue();
 				$item['language'] = BL::getWorkingLanguage();

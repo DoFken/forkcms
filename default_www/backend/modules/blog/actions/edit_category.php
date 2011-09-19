@@ -124,7 +124,7 @@ class BackendBlogEditCategory extends BackendBaseActionEdit
 				// build item
 				$item['id'] = $this->id;
 				$item['title'] = $this->frm->getField('title')->getValue();
-				$item['meta_id'] = $this->meta->save(true);
+				$item['meta_id'] = $this->meta->save(BackendMeta::UPDATE);
 
 				// upate the item
 				BackendBlogModel::updateCategory($item);

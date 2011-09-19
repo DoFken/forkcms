@@ -126,7 +126,7 @@ class BackendBlogAdd extends BackendBaseActionAdd
 			{
 				// build item
 				$item['id'] = (int) BackendBlogModel::getMaximumId() + 1;
-				$item['meta_id'] = $this->meta->save();
+				$item['meta_id'] = $this->meta->save(BackendMeta::INSERT);
 				$item['category_id'] = (int) $this->frm->getField('category_id')->getValue();
 				$item['user_id'] = $this->frm->getField('user_id')->getValue();
 				$item['language'] = BL::getWorkingLanguage();
