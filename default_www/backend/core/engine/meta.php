@@ -6,11 +6,21 @@
  * @package		backend
  * @subpackage	core
  *
- * @author		Tijs Verkoyen <tijs@netlash.com>
+ * @author		Tijs Verkoyen <tijs@sumocoders.be>
+ * @author		Davy Hellemans <davy@spoon-library.com>
  * @since		2.0
  */
 class BackendMeta
 {
+	/**
+	 * Used when inserting/updating a meta record
+	 *
+	 * @var	bool
+	 */
+	const INSERT = true;
+	const UPDATE = false;
+
+
 	/**
 	 * The name of the field we should use to generate default-values
 	 *
@@ -324,15 +334,15 @@ class BackendMeta
 
 
 	/**
-	 * Saves the meta object
+	 * Saves the meta object.
 	 *
 	 * @return	int
-	 * @param	bool[optional] $update		Should we update the record or insert a new one.
+	 * @param	bool[optional] $method		Should we update the record or insert a new one.
 	 */
-	public function save($update = false)
+	public function save($method = BackendMeta::INSERT)
 	{
 		// redefine
-		$update = (bool) $update;
+		$method = (bool) $method;
 
 		// no callback set by user?
 		if(empty($this->callback))
@@ -344,6 +354,7 @@ class BackendMeta
 			// set
 			$this->setUrlCallback($className, $methodName);
 		}
+
 		// get meta keywords
 		if($this->frm->getField('meta_keywords_overwrite')->isChecked()) $keywords = $this->frm->getField('meta_keywords')->getValue();
 		else $keywords = $this->frm->getField($this->baseFieldName)->getValue();
@@ -395,7 +406,7 @@ class BackendMeta
 		$db = BackendModel::getDB(true);
 
 		// should we update the record
-		if($update)
+		if($method)
 		{
 			// validate
 			if($this->id === null) throw new BackendException('No metaID specified.');
