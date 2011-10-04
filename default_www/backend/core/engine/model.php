@@ -939,129 +939,137 @@ class BackendModel
 	}
 
 
-	/**
-	 * Ping the known webservices
-	 *
-	 * @return	bool								If everything went fine true will be returned, otherwise false.
-	 * @param	string[optional] $pageOrFeedURL		The page/feed that has changed.
-	 * @param	string[optional] $category			An optional category for the site.
-	 */
-	public static function ping($pageOrFeedURL = null, $category = null)
+	public static function refreshPingServices()
 	{
-		// redefine
-		$siteTitle = self::getModuleSetting('core', 'site_title_' . BackendLanguage::getWorkingLanguage(), SITE_DEFAULT_TITLE);
-		$siteURL = SITE_URL;
-		$pageOrFeedURL = ($pageOrFeedURL !== null) ? (string) $pageOrFeedURL : null;
-		$category = ($category !== null) ? (string) $category : null;
+		// get ForkAPI-keys
+		$publicKey = self::getModuleSetting('core', 'fork_api_public_key', '');
+		$privateKey = self::getModuleSetting('core', 'fork_api_private_key', '');
 
+		// validate keys
+		if($publicKey == '' || $privateKey == '') return false;
+
+		// require the class
+		require_once PATH_LIBRARY . '/external/fork_api.php';
+
+		// create instance
+		$forkAPI = new ForkAPI($publicKey, $privateKey);
+
+		// try to get the services
+		try
+		{
+			$pingServices['services'] = $forkAPI->pingGetServices();
+			$pingServices['date'] = time();
+		}
+
+		// catch any exceptions
+		catch(Exception $e)
+		{
+			// check if the error should not be ignored
+			if(strpos($e->getMessage(), 'Operation timed out') === false && strpos($e->getMessage(), 'Invalid headers') === false)
+			{
+				if(SPOON_DEBUG) throw $e;
+				return false;
+			}
+		}
+
+		return $pingServices;
+	}
+
+	public static function getPingServices()
+	{
 		// get ping services
 		$pingServices = self::getModuleSetting('core', 'ping_services', null);
 
 		// no ping services available or older than one month ago
 		if($pingServices === null || $pingServices['date'] < strtotime('-1 month'))
 		{
-			// get ForkAPI-keys
-			$publicKey = self::getModuleSetting('core', 'fork_api_public_key', '');
-			$privateKey = self::getModuleSetting('core', 'fork_api_private_key', '');
-
-			// validate keys
-			if($publicKey == '' || $privateKey == '') return false;
-
-			// require the class
-			require_once PATH_LIBRARY . '/external/fork_api.php';
-
-			// create instance
-			$forkAPI = new ForkAPI($publicKey, $privateKey);
-
-			// try to get the services
-			try
-			{
-				$pingServices['services'] = $forkAPI->pingGetServices();
-				$pingServices['date'] = time();
-			}
-
-			// catch any exceptions
-			catch(Exception $e)
-			{
-				// check if the error should not be ignored
-				if(strpos($e->getMessage(), 'Operation timed out') === false && strpos($e->getMessage(), 'Invalid headers') === false)
-				{
-					// in debugmode we want to see the exceptions
-					if(SPOON_DEBUG) throw $e;
-
-					// stop
-					else return false;
-				}
-			}
-
-			// store the services
+			$pingServices = self::refreshPingServices();
 			self::setModuleSetting('core', 'ping_services', $pingServices);
 		}
 
-		// make sure services array will not trigger an error (even if we couldn't load any)
-		if(!isset($pingServices['services']) || !$pingServices['services']) $pingServices['services'] = array();
-
-		// loop services
-		foreach($pingServices['services'] as $service)
+		// there seem to be no services
+		if(!isset($pingServices['services']))
 		{
-			// create new client
-			$client = new SpoonXMLRPCClient($service['url']);
-
-			// set some properties
-			$client->setUserAgent('Fork ' . FORK_VERSION);
-			$client->setTimeOut(10);
-
-			// set port
-			$client->setPort($service['port']);
-
-			// try to ping
-			try
-			{
-				// extended ping?
-				if($service['type'] == 'extended')
-				{
-					// no page or feed URL present?
-					if($pageOrFeedURL === null) continue;
-
-					// build parameters
-					$parameters[] = array('type' => 'string', 'value' => $siteTitle);
-					$parameters[] = array('type' => 'string', 'value' => $siteURL);
-					$parameters[] = array('type' => 'string', 'value' => $pageOrFeedURL);
-					if($category !== null) $parameters[] = array('type' => 'string', 'value' => $category);
-
-					// make the call
-					$client->execute('weblogUpdates.extendedPing', $parameters);
-				}
-
-				// default ping
-				else
-				{
-					// build parameters
-					$parameters[] = array('type' => 'string', 'value' => $siteTitle);
-					$parameters[] = array('type' => 'string', 'value' => $siteURL);
-
-					// make the call
-					$client->execute('weblogUpdates.ping', $parameters);
-				}
-			}
-
-			// catch any exceptions
-			catch(Exception $e)
-			{
-				// check if the error should not be ignored
-				if(strpos($e->getMessage(), 'Operation timed out') === false && strpos($e->getMessage(), 'Invalid headers') === false)
-				{
-					// in debugmode we want to see the exceptions
-					if(SPOON_DEBUG) throw $e;
-				}
-
-				// next!
-				continue;
-			}
+			$pingServices['services'] = array();
 		}
 
-		// return
+		return $pingServices;
+	}
+
+	/**
+	 * Pings a specific service.
+	 *
+	 * @return bool
+	 * @param array $service This array contains the url, port and type of the service.
+	 * @param string $siteTitle
+	 * @param string $siteUrl
+	 * @param string[optional] $pageOrFeedUrl
+	 * @param string[optional] $category
+	 */
+	public static function pingService(array $service, $siteTitle, $siteUrl, $pageOrFeedUrl = null, $category = null)
+	{
+		$client = new SpoonXMLRPCClient($service['url']);
+		$client->setUserAgent('Fork ' . FORK_VERSION);
+		$client->setTimeOut(10);
+		$client->setPort($service['port']);
+
+		$parameters[] = array('type' => 'string', 'value' => $siteTitle);
+		$parameters[] = array('type' => 'string', 'value' => $siteURL);
+
+		// try to ping
+		try
+		{
+			// extended ping
+			if($service['type'] == 'extended')
+			{
+				// no page or feed URL present?
+				if($pageOrFeedURL === null) return false;
+
+				// add parameters
+				$parameters[] = array('type' => 'string', 'value' => $pageOrFeedURL);
+				if($category !== null)
+				{
+					$parameters[] = array('type' => 'string', 'value' => $category);
+				}
+
+				$client->execute('weblogUpdates.extendedPing', $parameters);
+			}
+
+			// default ping
+			else $client->execute('weblogUpdates.ping', $parameters);
+		}
+
+		// catch any exceptions
+		catch(Exception $e)
+		{
+			// check if the error should not be ignored
+			if(strpos($e->getMessage(), 'Operation timed out') === false &&	strpos($e->getMessage(), 'Invalid headers') === false)
+			{
+				if(SPOON_DEBUG) throw $e;
+			}
+
+			return false;
+		}
+
 		return true;
+	}
+
+
+	/**
+	 * Ping the know webservices.
+	 *
+	 * @param string[optional] $pageOrFeedURL
+	 * @param string[optional] $category
+	 */
+	public static function ping($pageOrFeedURL = null, $category = null)
+	{
+		$siteTitle = self::getModuleSetting('core', 'site_title_' . BackendLanguage::getWorkingLanguage(), SITE_DEFAULT_TITLE);
+		$pingServices = self::getPingServices();
+
+		foreach($pingServices['services'] as $service)
+		{
+			$this->pingService($service, $siteTitle, SITE_URL, $pageOrFeedURL, $category);
+		}
 	}
 
 
