@@ -636,6 +636,33 @@ class BackendModel
 
 
 	/**
+	 * Fetch the list ping services.
+	 *
+	 * @return array
+	 */
+	public static function getPingServices()
+	{
+		// get ping services
+		$pingServices = self::getModuleSetting('core', 'ping_services', null);
+
+		// no ping services available or older than one month ago
+		if($pingServices === null || $pingServices['date'] < strtotime('-1 month'))
+		{
+			$pingServices = self::refreshPingServices();
+			self::setModuleSetting('core', 'ping_services', $pingServices);
+		}
+
+		// there seem to be no services
+		if(!isset($pingServices['services']))
+		{
+			$pingServices['services'] = array();
+		}
+
+		return $pingServices;
+	}
+
+
+	/**
 	 * Fetch the list of available themes
 	 *
 	 * @return	array
@@ -939,62 +966,23 @@ class BackendModel
 	}
 
 
-	public static function refreshPingServices()
+	/**
+	 * Ping the know webservices.
+	 *
+	 * @param string[optional] $pageOrFeedURL
+	 * @param string[optional] $category
+	 */
+	public static function ping($pageOrFeedURL = null, $category = null)
 	{
-		// get ForkAPI-keys
-		$publicKey = self::getModuleSetting('core', 'fork_api_public_key', '');
-		$privateKey = self::getModuleSetting('core', 'fork_api_private_key', '');
+		$siteTitle = self::getModuleSetting('core', 'site_title_' . BackendLanguage::getWorkingLanguage(), SITE_DEFAULT_TITLE);
+		$pingServices = self::getPingServices();
 
-		// validate keys
-		if($publicKey == '' || $privateKey == '') return false;
-
-		// require the class
-		require_once PATH_LIBRARY . '/external/fork_api.php';
-
-		// create instance
-		$forkAPI = new ForkAPI($publicKey, $privateKey);
-
-		// try to get the services
-		try
+		foreach($pingServices['services'] as $service)
 		{
-			$pingServices['services'] = $forkAPI->pingGetServices();
-			$pingServices['date'] = time();
+			$this->pingService($service, $siteTitle, SITE_URL, $pageOrFeedURL, $category);
 		}
-
-		// catch any exceptions
-		catch(Exception $e)
-		{
-			// check if the error should not be ignored
-			if(strpos($e->getMessage(), 'Operation timed out') === false && strpos($e->getMessage(), 'Invalid headers') === false)
-			{
-				if(SPOON_DEBUG) throw $e;
-				return false;
-			}
-		}
-
-		return $pingServices;
 	}
 
-	public static function getPingServices()
-	{
-		// get ping services
-		$pingServices = self::getModuleSetting('core', 'ping_services', null);
-
-		// no ping services available or older than one month ago
-		if($pingServices === null || $pingServices['date'] < strtotime('-1 month'))
-		{
-			$pingServices = self::refreshPingServices();
-			self::setModuleSetting('core', 'ping_services', $pingServices);
-		}
-
-		// there seem to be no services
-		if(!isset($pingServices['services']))
-		{
-			$pingServices['services'] = array();
-		}
-
-		return $pingServices;
-	}
 
 	/**
 	 * Pings a specific service.
@@ -1014,7 +1002,7 @@ class BackendModel
 		$client->setPort($service['port']);
 
 		$parameters[] = array('type' => 'string', 'value' => $siteTitle);
-		$parameters[] = array('type' => 'string', 'value' => $siteURL);
+		$parameters[] = array('type' => 'string', 'value' => $siteUrl);
 
 		// try to ping
 		try
@@ -1023,10 +1011,10 @@ class BackendModel
 			if($service['type'] == 'extended')
 			{
 				// no page or feed URL present?
-				if($pageOrFeedURL === null) return false;
+				if($pageOrFeedUrl === null) return false;
 
 				// add parameters
-				$parameters[] = array('type' => 'string', 'value' => $pageOrFeedURL);
+				$parameters[] = array('type' => 'string', 'value' => $pageOrFeedUrl);
 				if($category !== null)
 				{
 					$parameters[] = array('type' => 'string', 'value' => $category);
@@ -1056,20 +1044,43 @@ class BackendModel
 
 
 	/**
-	 * Ping the know webservices.
+	 * Refreshes the ping services through the fork api.
 	 *
-	 * @param string[optional] $pageOrFeedURL
-	 * @param string[optional] $category
+	 * @return array
 	 */
-	public static function ping($pageOrFeedURL = null, $category = null)
+	public static function refreshPingServices()
 	{
-		$siteTitle = self::getModuleSetting('core', 'site_title_' . BackendLanguage::getWorkingLanguage(), SITE_DEFAULT_TITLE);
-		$pingServices = self::getPingServices();
+		// get ForkAPI-keys
+		$publicKey = self::getModuleSetting('core', 'fork_api_public_key', '');
+		$privateKey = self::getModuleSetting('core', 'fork_api_private_key', '');
 
-		foreach($pingServices['services'] as $service)
+		// validate keys
+		if($publicKey == '' || $privateKey == '') return false;
+
+		// require the class
+		require_once PATH_LIBRARY . '/external/fork_api.php';
+
+		// try to get the services
+		try
 		{
-			$this->pingService($service, $siteTitle, SITE_URL, $pageOrFeedURL, $category);
+			$forkAPI = new ForkAPI($publicKey, $privateKey);
+			$pingServices['services'] = $forkAPI->pingGetServices();
+			$pingServices['date'] = time();
+			BackendModel::setModuleSetting('core', 'ping_services', $pingServices);
 		}
+
+		// catch any exceptions
+		catch(Exception $e)
+		{
+			// check if the error should not be ignored
+			if(strpos($e->getMessage(), 'Operation timed out') === false && strpos($e->getMessage(), 'Invalid headers') === false)
+			{
+				if(SPOON_DEBUG) throw $e;
+				return false;
+			}
+		}
+
+		return $pingServices;
 	}
 
 
